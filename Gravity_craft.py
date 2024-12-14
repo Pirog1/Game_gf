@@ -1,6 +1,5 @@
 import csv
 import os
-import random
 import pygame
 from pygame.math import Vector2
 
@@ -16,8 +15,8 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-color = lambda: tuple([random.randint(0, 255) for i in range(3)])
 GRAVITY = Vector2(0, 1.52)
+
 
 class Player(pygame.sprite.Sprite):
     """Класс игрока.
@@ -37,6 +36,7 @@ class Player(pygame.sprite.Sprite):
         isjump (bool): Указывает, выполняет ли игрок прыжок.
         vel (Vector2): Вектор скорости игрока.
     """
+
     def __init__(self, image, platforms, pos, *groups):
         super().__init__(*groups)
         self.onGround = False
@@ -45,10 +45,10 @@ class Player(pygame.sprite.Sprite):
         self.win = False
         self.image = pygame.transform.smoothscale(image, (40, 40))
         self.rect = self.image.get_rect(center=pos)
-        self.jump_amount = 12  # Начальная сила прыжка
+        self.jump_amount = 13
         self.particles = []
         self.isjump = False
-        self.vel = Vector2(0, 0)  # Вектор скорости игрока
+        self.vel = Vector2(0, 0)
 
     def collide(self, yvel, platforms):
         """Обработка столкновений игрока с платформами.
@@ -62,32 +62,28 @@ class Player(pygame.sprite.Sprite):
         """
         for p in platforms:
             if pygame.sprite.collide_rect(self, p):
-                # Проверка столкновения с орбом
                 if isinstance(p, Orb) and (keys[pygame.K_UP] or keys[pygame.K_SPACE]):
                     pygame.draw.circle(alpha_surf, (255, 255, 0), p.rect.center, 18)
-                    screen.blit(pygame.image.load("images/editor-0.9s-47px.gif"), p.rect.center)
-                    self.jump_amount = 14  # Увеличение силы прыжка при взаимодействии с орбом
+                    screen.blit(pygame.image.load("assets/images/editor-0.9s-47px.gif"), p.rect.center)
+                    self.jump_amount = 15.2
                     self.jump()
-                    self.jump_amount = 12
+                    self.jump_amount = 13
 
-                # Проверка столкновения с конечной точкой
                 if isinstance(p, End):
                     self.win = True
 
-                # Проверка столкновения с шипами
                 if isinstance(p, Spike):
                     self.died = True
 
-                # Проверка столкновения с платформами
                 if isinstance(p, Platform):
-                    if yvel > 0:  # Игрок падает вниз
+                    if yvel > 0:
                         self.rect.bottom = p.rect.top
                         self.vel.y = 0
                         self.onGround = True
                         self.isjump = False
-                    elif yvel < 0:  # Игрок поднимается
+                    elif yvel < 0:
                         self.rect.top = p.rect.bottom
-                    else:  # Игрок сталкивается с платформой сбоку
+                    else:
                         self.vel.x = 0
                         self.rect.right = p.rect.left
                         self.died = True
@@ -108,17 +104,18 @@ class Player(pygame.sprite.Sprite):
             self.jump()
 
         if not self.onGround:
-            self.vel += GRAVITY  # Применение гравитации
-            if self.vel.y > 100: 
-                self.vel.y = 100  # Ограничение максимальной скорости падения
+            self.vel += GRAVITY
+            if self.vel.y > 100:
+                self.vel.y = 100
 
-        self.collide(0, self.platforms)  # Проверка столкновений по оси Y
-        self.rect.top += self.vel.y  # Обновление позиции игрока по оси Y
+        self.collide(0, self.platforms)
+        self.rect.top += self.vel.y
         self.onGround = False
-        self.collide(self.vel.y, self.platforms)  # Проверка столкновений по оси Y
+        self.collide(self.vel.y, self.platforms)
 
         # Оценка результата игры
         eval_outcome(self.win, self.died)
+
 
 class Draw(pygame.sprite.Sprite):
     """Базовый класс для объектов, которые нужно рисовать.
@@ -129,42 +126,52 @@ class Draw(pygame.sprite.Sprite):
         image (pygame.Surface): Изображение объекта.
         rect (pygame.Rect): Прямоугольник, представляющий положение и размер объекта.
     """
+
     def __init__(self, image, pos, *groups):
         super().__init__(*groups)
         self.image = image
         self.rect = self.image.get_rect(topleft=pos)
+
 
 class Platform(Draw):
     """Класс платформы.
 
     Этот класс представляет платформу, на которой может стоять игрок.
     """
+
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
+
 
 class Spike(Draw):
     """Класс шипа.
 
-    Этот класс представляет шипы, которые наносят урон игроку при столкновении.
+    Этот класс представляет шипы, которые убивают игроку при столкновении.
     """
+
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
+
 
 class Orb(Draw):
     """Класс орбиты.
 
-    Этот класс представляет орбы, которые игрок может собирать для получения очков.
+    Этот класс представляет орбы, которые игрок может использовать для двойного прыжка.
     """
+
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
+
 
 class End(Draw):
     """Класс конечной точки.
 
     Этот класс представляет конечную точку уровня, в которую игрок должен попасть для завершения уровня.
     """
+
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
+
 
 def init_level(map):
     """Инициализация уровня из карты.
@@ -178,18 +185,19 @@ def init_level(map):
     x, y = 0, 0
     for row in map:
         for col in row:
-            if col == "0":
-                Platform(block, (x, y), elements)  # Создание платформы
-            if col == "Spike":
-                Spike(spike, (x, y), elements)  # Создание шипа
-            if col == "Orb":
-                orbs.append([x, y])  # Добавление координат орба в список
-                Orb(orb, (x, y), elements)  # Создание орба
+            if col == "00":
+                Platform(block, (x, y), elements)
+            if col == "Sp":
+                Spike(spike, (x, y), elements)
+            if col == "Or":
+                orbs.append([x, y])
+                Orb(orb, (x, y), elements)
             if col == "End":
-                End(avatar, (x, y), elements)  # Создание конечной точки
-            x += 40  # Сдвиг по оси X для следующего элемента
-        y += 40  # Сдвиг по оси Y для следующей строки
-        x = 0  # Сброс координаты X
+                End(avatar, (x, y), elements)
+            x += 40
+        y += 40
+        x = 0
+
 
 def blitRotate(surf, image, pos, originpos):
     """Функция для вращения изображения.
@@ -210,9 +218,11 @@ def blitRotate(surf, image, pos, originpos):
     pivot = Vector2(originpos[0], -originpos[1])
     pivot_rotate = pivot.rotate(0)
     pivot_move = pivot_rotate - pivot
-    origin = (pos[0] - originpos[0] + min_box[0] - pivot_move[0], pos[1] - originpos[1] - max_box[1] + pivot_move[1])
+    origin = (pos[0] - originpos[0] + min_box[0] - pivot_move[0],
+              pos[1] - originpos[1] - max_box[1] + pivot_move[1])
     rotated_image = pygame.transform.rotozoom(image, 0, 1)
     surf.blit(rotated_image, origin)
+
 
 def won_screen():
     """Экран победы.
@@ -228,6 +238,7 @@ def won_screen():
     wait_for_key()  # Ожидание нажатия клавиши
     reset()  # Сброс состояния игры
 
+
 def death_screen():
     """Экран смерти.
 
@@ -240,8 +251,9 @@ def death_screen():
     game_over = font.render("Ты проиграл. Попробуешь ещё?", True, WHITE)
     screen.fill(pygame.Color("sienna"))
     screen.blits([[game_over, (290, 300)], [tip, (100, 500)]])
-    wait_for_key()  # Ожидание нажатия клавиши
-    reset()  # Сброс состояния игры
+    wait_for_key()
+    reset()
+
 
 def eval_outcome(won, died):
     """Оценка результата игры.
@@ -253,9 +265,10 @@ def eval_outcome(won, died):
         died (bool): Указывает, умер ли игрок.
     """
     if won:
-        won_screen()  # Показ экрана победы
+        won_screen()
     if died:
-        death_screen()  # Показ экрана смерти
+        death_screen()
+
 
 def block_map(level_num):
     """Загрузка карты уровня из CSV-файла.
@@ -272,8 +285,9 @@ def block_map(level_num):
     with open(level_num, newline='') as csvfile:
         trash = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in trash:
-            lvl.append(row)  # Добавление строки в уровень
+            lvl.append(row)
     return lvl
+
 
 def start_screen():
     """Экран выбора уровня.
@@ -291,6 +305,7 @@ def start_screen():
         escape = font.render("выход: Esc", True, RED)
         screen.blits([[welcome, (100, 100)], [controls, (100, 200)], [tip, (100, 500)], [escape, (100, 300)]])
 
+
 def reset():
     """Сброс состояния игры.
 
@@ -299,12 +314,13 @@ def reset():
     """
     global player, elements, player_sprite, level
     if level == 0:
-        pygame.mixer.music.load(os.path.join("music", "GigaChad_Theme_74842929.mp3"))
+        pygame.mixer.music.load(os.path.join("assets/music", "GigaChad_Theme_74842929.mp3"))
     pygame.mixer.music.play()  # Воспроизведение музыки
     player_sprite = pygame.sprite.Group()
     elements = pygame.sprite.Group()
-    player = Player(avatar, elements, (100, 150), player_sprite)  # Создание игрока
-    init_level(block_map("level_1.csv"))  # Инициализация уровня
+    player = Player(avatar, elements, (100, 140), player_sprite)
+    init_level(block_map("level_1.csv"))
+
 
 def move_map():
     """Движение карты в зависимости от игрока.
@@ -313,7 +329,8 @@ def move_map():
     чтобы создать эффект прокрутки.
     """
     for sprite in elements:
-        sprite.rect.x -= CameraX  # Сдвиг всех элементов в зависимости от скорости камеры
+        sprite.rect.x -= CameraX
+
 
 def wait_for_key():
     """Ожидание нажатия клавиши.
@@ -324,19 +341,20 @@ def wait_for_key():
     global level, start
     waiting = True
     while waiting:
-        clock.tick(60)  # Ограничение FPS
+        clock.tick(60)
         pygame.display.flip()
         if not start:
-            start_screen()  # Показ экрана выбора уровня
+            start_screen()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()  # Выход из игры
+                pygame.quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    start = True  # Начало игры при нажатии пробела
+                    start = True
                     waiting = False
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()  # Выход из игры при нажатии Esc
+                    pygame.quit()
+
 
 def resize(img, size=(40, 40)):
     """Изменение размера изображения.
@@ -352,64 +370,65 @@ def resize(img, size=(40, 40)):
     """
     return pygame.transform.smoothscale(img, size)
 
+
 font = pygame.font.SysFont("lucidaconsole", 20)
-avatar = pygame.image.load(os.path.join("images", "sticker.webp"))
+avatar = pygame.image.load(os.path.join("assets/images", "sticker.webp"))
 pygame.display.set_icon(avatar)
 alpha_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 player_sprite = pygame.sprite.Group()
 elements = pygame.sprite.Group()
-spike = pygame.image.load(os.path.join("images", "ugol.webp"))
+spike = pygame.image.load(os.path.join("assets/images", "ugol.webp"))
 spike = resize(spike)
-block = pygame.image.load(os.path.join("images", "Lava.jpg"))
+block = pygame.image.load(os.path.join("assets/images", "Lava.jpg"))
 block = pygame.transform.smoothscale(block, (40, 40))
-orb = pygame.image.load(os.path.join("images", "star.webp"))
+orb = pygame.image.load(os.path.join("assets/images", "star.webp"))
 orb = pygame.transform.smoothscale(orb, (40, 40))
 CameraX = 0
 level = 0
 orbs = []
 
 pygame.display.set_caption('Gravity Craft')
-music = pygame.mixer.music.load(os.path.join("music", "Yendorami — Gravity Falls (Opening Theme) (www.lightaudio.ru).mp3"))
+music = pygame.mixer.music.load(os.path.join("assets/music", "Yendorami — Gravity Falls (Opening Theme) (www.lightaudio.ru).mp3"))
 pygame.mixer.music.play()
-bg = pygame.image.load(os.path.join("images", "Ustena2.0.png"))
+bg = pygame.image.load(os.path.join("assets/images", "Ustena2.0.png"))
 tip = font.render("совет: не играй в эту игру", True, GREEN)
 
 while not done:
     keys = pygame.key.get_pressed()
     if not start:
-        wait_for_key()  # Ожидание нажатия клавиши для начала игры
-        reset()  # Сброс состояния игры
+        wait_for_key()
+        reset()
         start = True
 
-    player.vel.x = 10  # Установка горизонтальной скорости игрока
-    eval_outcome(player.win, player.died)  # Оценка результата игрока
+    player.vel.x = 10
+    eval_outcome(player.win, player.died)
     if keys[pygame.K_UP] or keys[pygame.K_SPACE]:
-        player.isjump = True  # Установка флага прыжка
+        player.isjump = True
 
     alpha_surf.fill((255, 255, 255, 1), special_flags=pygame.BLEND_RGBA_MULT)
-    player_sprite.update()  # Обновление состояния игрока
-    CameraX = player.vel.x  # Обновление значения скорости камеры
-    move_map()  # Перемещение карты
-    screen.blit(bg, (0, 0))  # Отображение фона
+    player_sprite.update()
+    CameraX = player.vel.x
+    move_map()
+    screen.blit(bg, (0, 0))
 
-    # Визуализация игрока
     if player.isjump:
-        blitRotate(screen, player.image, player.rect.center, (20, 20))  # Вращение изображения игрока
+        blitRotate(screen, player.image, player.rect.center, (20, 20))
     else:
-        player_sprite.draw(screen)  # Отображение игрока
-    elements.draw(screen)  # Отображение всех элементов уровня
+        player_sprite.draw(screen)
+    elements.draw(screen)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            done = True  # Выход из игры
+            done = True
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                done = True  # Выход из игры при нажатии Esc
+                done = True
             if event.key == pygame.K_2:
-                player.jump_amount += 1  # Увеличение силы прыжка при нажатии клавиши 2
+                player.jump_amount += 1
             if event.key == pygame.K_1:
-                player.jump_amount -= 1  # Уменьшение силы прыжка при нажатии клавиши 1
+                player.jump_amount -= 1
 
-    pygame.display.flip()  # Обновление экрана
-    clock.tick(60)  # Ограничение FPS
-pygame.quit()  # Завершение игры
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()

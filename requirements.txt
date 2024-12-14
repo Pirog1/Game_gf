@@ -1,3 +1,2 @@
-unitest~=24.3.1
 pygame~=24.3.1
-aiogram~=3.14.0
+pytest~=24.3.1
